@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SimilarArchiveFinder
 {
@@ -25,12 +26,13 @@ namespace SimilarArchiveFinder
 
         void Run()
         {
-            string delete = "delete";
-            Directory.CreateDirectory(delete);
             //scan folders, find similar ones
             string pattern = "*.7z";
             //var files = Directory.GetFiles(".", pattern).OrderBy(x => x);
-            var files = Directory.GetFiles(@"c:\temp\_finalburn_neo\", pattern).OrderBy(x => x);
+            Directory.SetCurrentDirectory(".");
+            var files = Directory.GetFiles(".", pattern).OrderBy(x => x);
+            string delete = "delete";
+            Directory.CreateDirectory(delete);
             int fileCount = files.Count();
             int fileIdx = 0;
             foreach (var file in files)
@@ -56,7 +58,7 @@ namespace SimilarArchiveFinder
                     //Console.WriteLine(otherFile + " match = " + bothMatch);
                     if (bothMatch)
                         similarFiles.Add(otherFile);
-                    if(fileIdx==1)
+                    if (fileIdx == 1)
                         Console.Write(".");
                 }
                 if (similarFiles.Count > 1)
@@ -71,9 +73,9 @@ namespace SimilarArchiveFinder
                             continue;
                         try
                         {
-                            File.Move(name, Path.Combine(delete, name));
+                            File.Move(name, Path.Combine(Directory.GetCurrentDirectory(), delete, Path.GetFileName(name)));
                         }
-                        catch { }
+                        catch(Exception e) { }
                     }
                 }
             }
@@ -133,9 +135,10 @@ namespace SimilarArchiveFinder
 
             //sample:
             //"c:\Program Files\7-Zip\7z.exe" l avengrgs.7z | grep - e "files" | awk '{printf $3}'
+            var nameWithoutFolder = fileName.Substring(fileName.LastIndexOf("\\") + 1);
             var si = new ProcessStartInfo()
             {
-                Arguments = $"l {fileName}",
+                Arguments = $"l \"{nameWithoutFolder}\"",
                 FileName = @"c:\Program Files\7-Zip\7z.exe",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -144,9 +147,14 @@ namespace SimilarArchiveFinder
                 WindowStyle = ProcessWindowStyle.Maximized
             };
             Process p = Process.Start(si);
-            p.Start();
+
+            string processOutput = null;
+            Thread ot = new Thread(() => { processOutput = p.StandardOutput.ReadToEnd(); });
+            ot.Start();
+
             p.WaitForExit();
-            string response = p.StandardOutput.ReadToEnd();
+            ot.Join();
+            string response = processOutput;
             //read the last line 
             string[] responseInLines = response.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             string lastLine = responseInLines.Last();
