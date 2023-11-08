@@ -50,7 +50,7 @@ namespace SimilarArchiveFinder
                     double ratio = mySize / (double)otherFileSize;
                     if (ratio < 1)
                         ratio = otherFileSize / (double)mySize;
-                    bool fileSizeMatch = ratio < 1.0001d;
+                    bool fileSizeMatch = ratio < 1.01d;
                     //match name
                     double similarity = Similarity(file, otherFile);
                     bool nameMatch = similarity > 0.7;
@@ -75,7 +75,7 @@ namespace SimilarArchiveFinder
                         {
                             File.Move(name, Path.Combine(Directory.GetCurrentDirectory(), delete, Path.GetFileName(name)));
                         }
-                        catch(Exception e) { }
+                        catch { }
                     }
                 }
             }
